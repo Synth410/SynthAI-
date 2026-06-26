@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>SynthAI — Дашборд</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-height: 100vh; }
+#header { background: linear-gradient(135deg, #0d1520, #0a1628); padding: 12px 24px; border-bottom: 1px solid #1d2d44; display: flex; align-items: center; gap: 12px; }
+#logo { width: 36px; height: 36px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+#title { font-size: 17px; font-weight: 600; color: #e6edf3; }
+#title span { color: #58a6ff; }
+#back-btn { margin-left: auto; background: linear-gradient(135deg, #1d2d44, #243447); color: #8b949e; border: 1px solid #30363d; border-radius: 10px; padding: 8px 16px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+#back-btn:hover { color: #e6edf3; border-color: #58a6ff; }
+#content { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.section-title { font-size: 13px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.card { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; padding: 18px 20px; }
+.card-label { font-size: 12px; color: #6e7681; margin-bottom: 8px; }
+.card-value { font-size: 26px; font-weight: 600; color: #e6edf3; }
+.card-unit { font-size: 13px; color: #8b949e; margin-left: 4px; }
+.card-sub { font-size: 12px; color: #6e7681; margin-top: 4px; }
+.card.accent { border-color: #1f6feb; }
+.card.warn { border-color: #d29922; }
+.card.ok { border-color: #238636; }
+.card.error { border-color: #8b2020; }
+#dtc-list { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; padding: 18px 20px; margin-bottom: 28px; }
+.dtc-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1d2d44; font-size: 14px; }
+.dtc-item:last-child { border-bottom: none; }
+.dtc-code { font-family: monospace; font-size: 14px; font-weight: 600; color: #f85149; background: #1a0a0a; padding: 2px 8px; border-radius: 6px; }
+.dtc-ok { color: #3fb950; font-size: 14px; }
+#refresh-btn { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; border: none; border-radius: 10px; padding: 10px 22px; cursor: pointer; font-size: 14px; font-weight: 500; margin-bottom: 24px; }
+#refresh-btn:hover { opacity: 0.85; }
+#status-bar { font-size: 12px; color: #6e7681; margin-bottom: 16px; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #1d2d44; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="logo">◈</div>
+  <div id="title">Synth<span>AI</span> — Дашборд</div>
+  <button id="back-btn" onclick="window.location.href='/'">← Назад</button>
+</div>
+
+<div id="content">
+  <div id="status-bar">Завантаження даних...</div>
+  <button id="refresh-btn" onclick="loadData()">🔄 Оновити дані</button>
+
+  <div class="section-title">Показники двигуна</div>
+  <div class="grid" id="sensors-grid">
+    <div class="card"><div class="card-label">Очікування даних...</div><div class="card-value">—</div></div>
+  </div>
+
+  <div class="section-title">Коди помилок (DTC)</div>
+  <div id="dtc-list">
+    <div class="dtc-ok">⏳ Завантаження...</div>
+  </div>
+</div>
+
+<script>
+async function loadData() {
+  const statusBar = document.getElementById('status-bar');
+  statusBar.innerHTML = '<span class="spinner"></span>Сканую OBD...';
+  document.getElementById('refresh-btn').disabled = true;
+
+  try {
+    const res = await fetch('/obd/scan', { method: 'POST' });
+    const data = await res.json();
+    renderData(data);
+    statusBar.innerText = 'Оновлено: ' + new Date().toLocaleTimeString('uk-UA');
+  } catch(e) {
+    statusBar.innerText = 'Помилка підключення до OBD';
+  }
+  document.getElementById('refresh-btn').disabled = false;
+}
+
+function renderData(data) {
+  const grid = document.getElementById('sensors-grid');
+  const dtcList = document.getElementById('dtc-list');
+  const skip = ['dtc_codes', 'current_dtc'];
+  const cards = [];
+
+  for (const [key, info] of Object.entries(data)) {
+    if (skip.includes(key) || typeof info !== 'object') continue;
+    const val = info.value || '—';
+    const unit = info.unit || '';
+    const label = info.label || key;
+    const cardClass = val === 'Не підтримується' ? '' : 'accent';
+    cards.push(`
+      <div class="card ${cardClass}">
+        <div class="card-label">${label}</div>
+        <div class="card-value">${val}<span class="card-unit">${unit}</span></div>
+      </div>
+    `);
+  }
+
+  grid.innerHTML = cards.length ? cards.join('') : '<div class="card"><div class="card-label">OBD не підключено</div><div class="card-value">—</div></div>';
+
+  const dtc = data.dtc_codes || [];
+  const pending = data.current_dtc || [];
+  let html = '';
+
+  if (dtc.length === 0 && pending.length === 0) {
+    html = '<div class="dtc-ok">✅ Помилок не виявлено</div>';
+  } else {
+    dtc.forEach(code => {
+      html += `<div class="dtc-item"><span class="dtc-code">${code}</span><span>Підтверджена помилка</span></div>`;
+    });
+    pending.forEach(code => {
+      html += `<div class="dtc-item"><span class="dtc-code" style="color:#d29922;background:#1a1200;">${code}</span><span>Очікуюча помилка</span></div>`;
+    });
+  }
+
+  dtcList.innerHTML = html;
+}
+
+// Автооновлення кожні 5 секунд
+loadData();
+setInterval(loadData, 5000);
+</script>
+</body>
+</html>

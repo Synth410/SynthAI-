@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>SynthAI — База</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-height: 100vh; }
+#header { background: linear-gradient(135deg, #0d1520, #0a1628); padding: 12px 24px; border-bottom: 1px solid #1d2d44; display: flex; align-items: center; gap: 12px; }
+#logo { width: 36px; height: 36px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+#title { font-size: 17px; font-weight: 600; color: #e6edf3; }
+#title span { color: #58a6ff; }
+#back-btn { margin-left: auto; background: linear-gradient(135deg, #1d2d44, #243447); color: #8b949e; border: 1px solid #30363d; border-radius: 10px; padding: 8px 16px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+#back-btn:hover { color: #e6edf3; border-color: #58a6ff; }
+#content { padding: 24px; max-width: 1000px; margin: 0 auto; }
+#add-car-form { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+#add-car-form h3 { width: 100%; font-size: 14px; color: #8b949e; margin-bottom: 4px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+.form-group label { font-size: 12px; color: #6e7681; }
+.form-group input { background: #111827; border: 1px solid #1d2d44; border-radius: 8px; padding: 9px 12px; color: #e6edf3; font-size: 13px; outline: none; }
+.form-group input:focus { border-color: #58a6ff; }
+.add-btn { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 500; align-self: flex-end; }
+.add-btn:hover { opacity: 0.85; }
+#cars-list { display: flex; flex-direction: column; gap: 16px; }
+.car-card { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; overflow: hidden; }
+.car-header { padding: 16px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: background 0.2s; }
+.car-header:hover { background: rgba(255,255,255,0.03); }
+.car-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #1d2d44, #243447); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.car-info { flex: 1; }
+.car-name { font-size: 15px; font-weight: 600; color: #e6edf3; }
+.car-meta { font-size: 12px; color: #6e7681; margin-top: 2px; }
+.car-actions { display: flex; gap: 8px; }
+.diag-count { background: linear-gradient(135deg, #0d2818, #1a4d2e); color: #3fb950; border: 1px solid #238636; border-radius: 20px; padding: 4px 12px; font-size: 12px; }
+.del-car-btn { background: linear-gradient(135deg, #0d1a3a, #1a2a5a); color: #58a6ff; border: 1px solid #1f6feb; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+.del-car-btn:hover { background: linear-gradient(135deg, #8b2020, #a32d2d); color: white; border-color: #f85149; }
+.diagnostics-panel { border-top: 1px solid #1d2d44; padding: 16px 20px; display: none; }
+.diagnostics-panel.open { display: block; }
+.diag-item { background: #080c14; border: 1px solid #1d2d44; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; }
+.diag-date { font-size: 11px; color: #6e7681; white-space: nowrap; }
+.diag-text { flex: 1; font-size: 13px; color: #c9d1d9; line-height: 1.5; }
+.del-diag-btn { background: linear-gradient(135deg, #0d1a3a, #1a2a5a); color: #58a6ff; border: 1px solid #1f6feb; border-radius: 6px; width: 24px; height: 24px; cursor: pointer; font-size: 11px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.del-diag-btn:hover { background: linear-gradient(135deg, #8b2020, #a32d2d); color: white; border-color: #f85149; }
+.no-diag { font-size: 13px; color: #6e7681; text-align: center; padding: 16px; }
+.add-diag-form { display: flex; gap: 8px; margin-top: 12px; }
+.add-diag-form input { flex: 1; background: #111827; border: 1px solid #1d2d44; border-radius: 8px; padding: 9px 12px; color: #e6edf3; font-size: 13px; outline: none; }
+.add-diag-form input:focus { border-color: #58a6ff; }
+.add-diag-btn { background: linear-gradient(135deg, #0d2818, #1a4d2e); color: #3fb950; border: 1px solid #238636; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-size: 13px; }
+.add-diag-btn:hover { background: #238636; color: white; }
+</style>
+</head>
+<body>
+<div id="header">
+  <div id="logo">🚗</div>
+  <div id="title">Synth<span>AI</span> — База автомобілів</div>
+  <button id="back-btn" onclick="window.location.replace('/')">← Назад</button>
+</div>
+<div id="content">
+  <div id="add-car-form">
+    <h3>Додати автомобіль</h3>
+    <div class="form-group"><label>Марка</label><input id="car-brand" type="text" placeholder="Ford"></div>
+    <div class="form-group"><label>Модель</label><input id="car-model" type="text" placeholder="Focus"></div>
+    <div class="form-group"><label>Рік</label><input id="car-year" type="text" placeholder="2018"></div>
+    <div class="form-group"><label>VIN / Держномер</label><input id="car-vin" type="text" placeholder="AA1234BB"></div>
+    <button class="add-btn" onclick="addCar()">+ Додати</button>
+  </div>
+  <div id="cars-list"></div>
+</div>
+<script>
+async function loadCars() {
+  const res = await fetch("/api/cars");
+  const cars = await res.json();
+  const list = document.getElementById("cars-list");
+  list.innerHTML = "";
+  if (cars.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#6e7681;padding:40px;font-size:14px;">Автомобілів ще немає.</div>';
+    return;
+  }
+  cars.forEach(car => {
+    const card = document.createElement("div");
+    card.className = "car-card";
+    card.id = "car-"+car.id;
+    card.innerHTML = `
+      <div class="car-header" onclick="toggleDiag('${car.id}')">
+        <div class="car-icon">🚗</div>
+        <div class="car-info">
+          <div class="car-name">${car.brand} ${car.model} ${car.year}</div>
+          <div class="car-meta">${car.vin||"VIN не вказано"} • ${car.created}</div>
+        </div>
+        <div class="car-actions">
+          <span class="diag-count">${car.diagnostics.length} діагностик</span>
+          <button class="del-car-btn" onclick="deleteCar(event,'${car.id}')">Видалити</button>
+        </div>
+      </div>
+      <div class="diagnostics-panel" id="diag-${car.id}">
+        <div id="diag-list-${car.id}">
+          ${car.diagnostics.length===0
+            ? '<div class="no-diag">Діагностик ще немає</div>'
+            : car.diagnostics.map(d=>`
+              <div class="diag-item" id="diag-item-${d.id}">
+                <div class="diag-date">${d.date}</div>
+                <div class="diag-text">${d.text}</div>
+                <button class="del-diag-btn" onclick="deleteDiag('${car.id}','${d.id}')">✕</button>
+              </div>`).join("")
+          }
+        </div>
+        <div class="add-diag-form">
+          <input type="text" id="diag-input-${car.id}" placeholder="Додати запис діагностики...">
+          <button class="add-diag-btn" onclick="addDiag('${car.id}')">+ Додати</button>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+function toggleDiag(id) { document.getElementById("diag-"+id).classList.toggle("open"); }
+async function addCar() {
+  const brand = document.getElementById("car-brand").value.trim();
+  const model = document.getElementById("car-model").value.trim();
+  const year = document.getElementById("car-year").value.trim();
+  const vin = document.getElementById("car-vin").value.trim();
+  if (!brand||!model) return;
+  await fetch("/api/cars",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({brand,model,year,vin})});
+  document.getElementById("car-brand").value="";
+  document.getElementById("car-model").value="";
+  document.getElementById("car-year").value="";
+  document.getElementById("car-vin").value="";
+  loadCars();
+}
+async function deleteCar(e,id) { e.stopPropagation(); await fetch("/api/cars/"+id,{method:"DELETE"}); document.getElementById("car-"+id).remove(); }
+async function addDiag(carId) {
+  const input = document.getElementById("diag-input-"+carId);
+  const text = input.value.trim();
+  if (!text) return;
+  await fetch("/api/cars/"+carId+"/diagnostic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  input.value="";
+  loadCars();
+}
+async function deleteDiag(carId,diagId) { await fetch("/api/cars/"+carId+"/diagnostic/"+diagId,{method:"DELETE"}); document.getElementById("diag-item-"+diagId).remove(); }
+loadCars();
+</script>
+</body>
+</html>

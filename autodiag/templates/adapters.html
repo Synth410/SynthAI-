@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>SynthAI — Адаптери</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-height: 100vh; }
+#header { background: linear-gradient(135deg, #0d1520, #0a1628); padding: 12px 24px; border-bottom: 1px solid #1d2d44; display: flex; align-items: center; gap: 12px; }
+#logo { width: 36px; height: 36px; background: linear-gradient(135deg, #1f6feb, #58a6ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+#title { font-size: 17px; font-weight: 600; color: #e6edf3; }
+#title span { color: #58a6ff; }
+#back-btn { margin-left: auto; background: linear-gradient(135deg, #1d2d44, #243447); color: #8b949e; border: 1px solid #30363d; border-radius: 10px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
+#back-btn:hover { color: #e6edf3; border-color: #58a6ff; }
+#content { padding: 24px; max-width: 900px; margin: 0 auto; }
+#add-form { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+#add-form h3 { font-size: 14px; color: #8b949e; margin-bottom: 16px; }
+.add-note { font-size: 12px; color: #6e7681; margin-bottom: 12px; padding: 10px 14px; background: #0a0f1a; border-radius: 8px; border-left: 3px solid #1f6feb; }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+.form-group label { font-size: 12px; color: #6e7681; }
+.form-group input { background: #111827; border: 1px solid #1d2d44; border-radius: 8px; padding: 9px 12px; color: #e6edf3; font-size: 13px; outline: none; }
+.form-group input:focus { border-color: #58a6ff; }
+.add-btn { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; border: none; border-radius: 10px; padding: 10px 24px; cursor: pointer; font-size: 14px; font-weight: 500; }
+.add-btn:hover { opacity: 0.85; }
+.add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#adapters-list { display: flex; flex-direction: column; gap: 12px; }
+.adapter-card { background: linear-gradient(135deg, #0d1520, #111827); border: 1px solid #1d2d44; border-radius: 14px; padding: 16px 20px; transition: border 0.2s; }
+.adapter-card.active-card { border-color: #1f6feb; }
+.adapter-header { display: flex; align-items: center; gap: 14px; }
+.adapter-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #1d2d44, #243447); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.adapter-info { flex: 1; }
+.adapter-name { font-size: 15px; font-weight: 600; color: #e6edf3; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.active-badge { background: linear-gradient(135deg, #0d2818, #1a4d2e); color: #3fb950; border: 1px solid #238636; border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.analyzing-badge { background: linear-gradient(135deg, #2d2010, #3d2a10); color: #d29922; border: 1px solid #8b6914; border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.ready-badge { background: linear-gradient(135deg, #0d2818, #1a4d2e); color: #3fb950; border: 1px solid #238636; border-radius: 20px; padding: 2px 10px; font-size: 11px; }
+.adapter-desc { font-size: 12px; color: #6e7681; margin-top: 4px; }
+.adapter-car { font-size: 12px; color: #58a6ff; margin-top: 3px; }
+.adapter-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.activate-btn { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
+.activate-btn:disabled { background: linear-gradient(135deg, #0d2818, #1a4d2e); color: #3fb950; cursor: default; }
+.recheck-btn { background: linear-gradient(135deg, #1d2d44, #243447); color: #8b949e; border: 1px solid #30363d; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+.recheck-btn:hover { color: #e6edf3; border-color: #58a6ff; }
+.del-btn { background: linear-gradient(135deg, #0d1a3a, #1a2a5a); color: #58a6ff; border: 1px solid #1f6feb; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+.del-btn:hover { background: linear-gradient(135deg, #8b2020, #a32d2d); color: white; border-color: #f85149; }
+.caps-block { margin-top: 12px; padding-top: 12px; border-top: 1px solid #1d2d44; }
+.caps-title { font-size: 12px; color: #6e7681; margin-bottom: 8px; }
+.caps-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.cap { font-size: 11px; padding: 3px 10px; border-radius: 10px; }
+.cap.yes { background: #0d2818; color: #3fb950; border: 1px solid #238636; }
+.cap.no { background: #2d1010; color: #f85149; border: 1px solid #8b2020; }
+.cap-info { font-size: 12px; color: #8b949e; margin-top: 4px; }
+.cap-summary { font-size: 13px; color: #c9d1d9; margin-top: 6px; font-style: italic; }
+.analyzing-info { font-size: 13px; color: #d29922; margin-top: 12px; padding-top: 12px; border-top: 1px solid #1d2d44; }
+</style>
+</head>
+<body>
+<div id="header">
+  <div id="logo">🔌</div>
+  <div id="title">Synth<span>AI</span> — Адаптери OBD</div>
+  <button id="back-btn" onclick="window.location.replace('/')">← Назад</button>
+</div>
+
+<div id="content">
+  <div id="add-form">
+    <h3>Додати адаптер</h3>
+    <div class="add-note">ℹ️ Введіть тільки назву і опис — IRIS автоматично визначить можливості адаптера після того як ви вкажете авто в чаті</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Назва адаптера</label>
+        <input id="a-name" type="text" placeholder="ELM327 v1.5 Bluetooth PIC18F25K80">
+      </div>
+      <div class="form-group">
+        <label>Опис (чіп, версія, тип підключення)</label>
+        <input id="a-desc" type="text" placeholder="Двоплатний Bluetooth адаптер на PIC18F25K80, прошивка 1.5">
+      </div>
+    </div>
+    <button class="add-btn" id="add-btn" onclick="addAdapter()">+ Додати адаптер</button>
+  </div>
+
+  <div id="adapters-list"></div>
+</div>
+
+<script>
+async function loadAdapters() {
+  const res = await fetch("/api/adapters");
+  const adapters = await res.json();
+  const list = document.getElementById("adapters-list");
+  list.innerHTML = "";
+
+  if (adapters.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#6e7681;padding:40px;font-size:14px;">Адаптерів ще немає. Додайте перший!</div>';
+    return;
+  }
+
+  adapters.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "adapter-card" + (a.active ? " active-card" : "");
+    card.id = "adapter-" + a.id;
+
+    const caps = a.capabilities;
+    const car = a.car_context;
+    const status = a.status;
+
+    const statusBadge = status === "analyzing"
+      ? '<span class="analyzing-badge">⏳ Аналіз</span>'
+      : '<span class="ready-badge">✓ Готовий</span>';
+
+    const carInfo = car
+      ? `<div class="adapter-car">🚗 Для: ${car.year || ''} ${car.make || ''} ${car.model || ''}</div>`
+      : '';
+
+    let capsHtml = '';
+    if (status === "analyzing") {
+      capsHtml = `<div class="analyzing-info">⏳ Gemini досліджує адаптер... Вкажіть авто в чаті з IRIS щоб прискорити аналіз (наприклад: "Ford Focus 2015")</div>`;
+    } else if (caps) {
+      const sensors = (caps.sensors_available || []).join(', ') || 'стандартні OBD';
+      const actuators = (caps.actuators_available || []).join(', ') || 'недоступні';
+      const protocols = (caps.protocols || []).join(', ') || '—';
+      const limits = (caps.limitations || []).join(', ');
+
+      capsHtml = `
+        <div class="caps-block">
+          <div class="caps-title">Можливості (визначено AI):</div>
+          <div class="caps-grid">
+            <span class="cap ${caps.can_read_dtc?'yes':'no'}">${caps.can_read_dtc?'✓':'✗'} Читання помилок</span>
+            <span class="cap ${caps.can_clear_dtc?'yes':'no'}">${caps.can_clear_dtc?'✓':'✗'} Очищення помилок</span>
+            <span class="cap ${caps.can_read_sensors?'yes':'no'}">${caps.can_read_sensors?'✓':'✗'} Датчики</span>
+            <span class="cap ${caps.can_control_actuators?'yes':'no'}">${caps.can_control_actuators?'✓':'✗'} Актуатори</span>
+            <span class="cap ${caps.can_read_advanced?'yes':'no'}">${caps.can_read_advanced?'✓':'✗'} Розширена</span>
+          </div>
+          <div class="cap-info">🔗 Протоколи: ${protocols}</div>
+          <div class="cap-info">📊 Датчики: ${sensors}</div>
+          <div class="cap-info">⚙️ Актуатори: ${actuators}</div>
+          ${limits ? `<div class="cap-info">⚠️ ${limits}</div>` : ''}
+          ${caps.summary ? `<div class="cap-summary">${caps.summary}</div>` : ''}
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="adapter-header">
+        <div class="adapter-icon">🔌</div>
+        <div class="adapter-info">
+          <div class="adapter-name">
+            ${a.name}
+            ${a.active ? '<span class="active-badge">● Активний</span>' : ''}
+            ${statusBadge}
+          </div>
+          <div class="adapter-desc">${a.description || ''}</div>
+          ${carInfo}
+        </div>
+        <div class="adapter-actions">
+          <button class="activate-btn" onclick="activateAdapter('${a.id}')" ${a.active?'disabled':''}>
+            ${a.active ? '✓ Активний' : 'Активувати'}
+          </button>
+          <button class="recheck-btn" onclick="recheck('${a.id}','${a.name}','${a.description || ''}')">🔄</button>
+          <button class="del-btn" onclick="deleteAdapter('${a.id}')">✕</button>
+        </div>
+      </div>
+      ${capsHtml}
+    `;
+    list.appendChild(card);
+  });
+}
+
+async function addAdapter() {
+  const name = document.getElementById("a-name").value.trim();
+  const desc = document.getElementById("a-desc").value.trim();
+  if (!name) return;
+
+  const btn = document.getElementById("add-btn");
+  btn.disabled = true;
+  btn.innerText = "⏳ Додаємо...";
+
+  await fetch("/api/adapters", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({name, description: desc})
+  });
+
+  document.getElementById("a-name").value = "";
+  document.getElementById("a-desc").value = "";
+  btn.disabled = false;
+  btn.innerText = "+ Додати адаптер";
+  loadAdapters();
+}
+
+async function activateAdapter(id) {
+  await fetch(`/api/adapters/${id}/activate`, {method: "POST"});
+  loadAdapters();
+}
+
+async function deleteAdapter(id) {
+  await fetch(`/api/adapters/${id}`, {method: "DELETE"});
+  loadAdapters();
+}
+
+async function recheck(id, name, desc) {
+  await fetch(`/api/adapters/${id}/recheck`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({name, description: desc})
+  });
+  setTimeout(loadAdapters, 8000);
+}
+
+loadAdapters();
+setInterval(loadAdapters, 10000);
+</script>
+</body>
+</html>
