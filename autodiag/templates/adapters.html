@@ -92,6 +92,12 @@ body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-
   };
 })();
 
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
 async function loadAdapters() {
   const res = await fetch("/api/adapters");
   const adapters = await res.json();
@@ -117,7 +123,7 @@ async function loadAdapters() {
       : '<span class="ready-badge">✓ Готовий</span>';
 
     const carInfo = car
-      ? `<div class="adapter-car">🚗 Для: ${car.year || ''} ${car.make || ''} ${car.model || ''}</div>`
+      ? `<div class="adapter-car">🚗 Для: ${escapeHtml(car.year || '')} ${escapeHtml(car.make || '')} ${escapeHtml(car.model || '')}</div>`
       : '';
 
     let capsHtml = '';
@@ -152,19 +158,19 @@ async function loadAdapters() {
         <div class="adapter-icon">🔌</div>
         <div class="adapter-info">
           <div class="adapter-name">
-            ${a.name}
+            ${escapeHtml(a.name)}
             ${a.active ? '<span class="active-badge">● Активний</span>' : ''}
             ${statusBadge}
           </div>
-          <div class="adapter-desc">${a.description || ''}</div>
+          <div class="adapter-desc">${escapeHtml(a.description || '')}</div>
           ${carInfo}
         </div>
         <div class="adapter-actions">
-          <button class="activate-btn" onclick="activateAdapter('${a.id}')" ${a.active?'disabled':''}>
+          <button class="activate-btn" data-action="activate" data-id="${a.id}" ${a.active?'disabled':''}>
             ${a.active ? '✓ Активний' : 'Активувати'}
           </button>
-          <button class="recheck-btn" onclick="recheck('${a.id}','${a.name}','${a.description || ''}')">🔄</button>
-          <button class="del-btn" onclick="deleteAdapter('${a.id}')">✕</button>
+          <button class="recheck-btn" data-action="recheck" data-id="${a.id}" data-name="${escapeHtml(a.name)}" data-desc="${escapeHtml(a.description || '')}">🔄</button>
+          <button class="del-btn" data-action="delete" data-id="${a.id}">✕</button>
         </div>
       </div>
       ${capsHtml}
@@ -172,6 +178,15 @@ async function loadAdapters() {
     list.appendChild(card);
   });
 }
+
+document.getElementById("adapters-list").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const { action, id, name, desc } = btn.dataset;
+  if (action === "activate") activateAdapter(id);
+  else if (action === "delete") deleteAdapter(id);
+  else if (action === "recheck") recheck(id, name, desc);
+});
 
 async function addAdapter() {
   const name = document.getElementById("a-name").value.trim();

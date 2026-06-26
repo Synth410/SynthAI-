@@ -76,6 +76,12 @@ body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-
   };
 })();
 
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
 async function loadCars() {
   const res = await fetch("/api/cars");
   const cars = await res.json();
@@ -93,8 +99,8 @@ async function loadCars() {
       <div class="car-header" onclick="toggleDiag('${car.id}')">
         <div class="car-icon">🚗</div>
         <div class="car-info">
-          <div class="car-name">${car.brand} ${car.model} ${car.year}</div>
-          <div class="car-meta">${car.vin||"VIN не вказано"} • ${car.created}</div>
+          <div class="car-name">${escapeHtml(car.brand)} ${escapeHtml(car.model)} ${escapeHtml(car.year)}</div>
+          <div class="car-meta">${escapeHtml(car.vin)||"VIN не вказано"} • ${escapeHtml(car.created)}</div>
         </div>
         <div class="car-actions">
           <span class="diag-count">${car.diagnostics.length} діагностик</span>
@@ -107,8 +113,8 @@ async function loadCars() {
             ? '<div class="no-diag">Діагностик ще немає</div>'
             : car.diagnostics.map(d=>`
               <div class="diag-item" id="diag-item-${d.id}">
-                <div class="diag-date">${d.date}</div>
-                <div class="diag-text">${d.text}</div>
+                <div class="diag-date">${escapeHtml(d.date)}</div>
+                <div class="diag-text">${escapeHtml(d.text)}</div>
                 <button class="del-diag-btn" onclick="deleteDiag('${car.id}','${d.id}')">✕</button>
               </div>`).join("")
           }
