@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/diag/autodiag
+cd "$(dirname "$(readlink -f "$0")")"
 . venv/bin/activate
 
 # ВИПРАВЛЕНО: використовуємо python3 зі стабільної версії venv, не хардкодимо 3.14

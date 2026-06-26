@@ -4,6 +4,8 @@ import time
 import os
 import json
 import re
+import ast
+import operator
 
 # ВИПРАВЛЕНО: MAC читається з .env, а не хардкодиться
 OBD_MAC = os.getenv("OBD_MAC", "AA:BB:CC:11:22:33")
@@ -11,6 +13,38 @@ OBD_PORT = "/dev/rfcomm0"
 
 # Безпечний набір символів для формул PID
 _SAFE_FORMULA_RE = re.compile(r'^[A-D0-9\s\+\-\*\/\(\)\.\,]+$')
+
+# Дозволені бінарні/унарні операції для безпечного обчислення формул PID
+_SAFE_BINOPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+}
+_SAFE_UNARYOPS = {
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
+}
+
+
+def _safe_eval_formula(formula, variables):
+    """Обчислює арифметичну формулу (A/B/C/D, + - * /) без eval(), через AST."""
+    tree = ast.parse(formula, mode="eval")
+
+    def _eval(node):
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.Name) and node.id in variables:
+            return variables[node.id]
+        if isinstance(node, ast.BinOp) and type(node.op) in _SAFE_BINOPS:
+            return _SAFE_BINOPS[type(node.op)](_eval(node.left), _eval(node.right))
+        if isinstance(node, ast.UnaryOp) and type(node.op) in _SAFE_UNARYOPS:
+            return _SAFE_UNARYOPS[type(node.op)](_eval(node.operand))
+        raise ValueError(f"Недопустимий вираз у формулі PID: {ast.dump(node)}")
+
+    return _eval(tree)
 
 
 def ensure_port():
@@ -149,7 +183,7 @@ class ELMConnection:
             C = int(hex_data[4:6], 16) if len(hex_data) >= 6 else 0
             D = int(hex_data[6:8], 16) if len(hex_data) >= 8 else 0
 
-            result = eval(formula, {"__builtins__": {}}, {"A": A, "B": B, "C": C, "D": D})
+            result = _safe_eval_formula(formula, {"A": A, "B": B, "C": C, "D": D})
             return round(result, 2)
         except:
             return None

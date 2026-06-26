@@ -66,6 +66,16 @@ body { background: #060a12; color: #e6edf3; font-family: Arial, sans-serif; min-
   <div id="cars-list"></div>
 </div>
 <script>
+(function() {
+  const API_TOKEN = "{{ api_token }}";
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, { "X-API-Token": API_TOKEN });
+    return _origFetch(url, opts);
+  };
+})();
+
 async function loadCars() {
   const res = await fetch("/api/cars");
   const cars = await res.json();

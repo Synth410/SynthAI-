@@ -89,6 +89,9 @@ while [ -z "$OBD_MAC" ]; do
     read -p "Enter the MAC address: " OBD_MAC
 done
 
+# Generate a random shared secret to protect the API from LAN access
+API_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | md5sum | cut -d' ' -f1)
+
 echo ""
 echo -e "${CYAN}Step 3: Username${NC}"
 CURRENT_USER=$(whoami)
@@ -182,6 +185,7 @@ cat > "$INSTALL_DIR/.env" << EOF
 GEMINI_API_KEY=$GEMINI_KEY
 GEMINI_RESEARCH_API_KEY=$GEMINI_RESEARCH_KEY
 OBD_MAC=$OBD_MAC
+API_TOKEN=$API_TOKEN
 EOF
 echo -e "${GREEN}✅ Configuration written to .env${NC}"
 

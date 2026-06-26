@@ -2,7 +2,7 @@ import json
 import uuid
 from pathlib import Path
 
-ADAPTERS_FILE = Path("/home/diag/autodiag/data/adapters.json")
+ADAPTERS_FILE = Path(__file__).resolve().parent / "data" / "adapters.json"
 ADAPTERS_FILE.parent.mkdir(exist_ok=True)
 
 def load_adapters():

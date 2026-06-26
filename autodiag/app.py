@@ -19,6 +19,25 @@ gemini_client = None
 if GEMINI_API_KEY:
     gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
+# --- Захист API від несанкціонованого доступу в локальній мережі ---
+API_TOKEN = os.getenv("API_TOKEN", "")
+if not API_TOKEN:
+    print("[WARNING] API_TOKEN не встановлено в .env — API-роути не захищені!")
+
+# Сторінки (HTML-шаблони), які можна завантажити без токена — самі по собі не містять даних
+_PUBLIC_PATHS = {"/", "/dashboard", "/adapters-page", "/cars"}
+
+
+@app.before_request
+def _require_api_token():
+    if not API_TOKEN:
+        return  # auth вимкнено, якщо токен не налаштований
+    if request.path in _PUBLIC_PATHS or request.path.startswith("/static/"):
+        return
+    token = request.headers.get("X-API-Token", "")
+    if token != API_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
 SYSTEM_PROMPT = {
     "role": "system",
     "content": '''Ти - IRIS, діагностичний асистент стенду SynthAI.
@@ -47,10 +66,12 @@ OBD ДІАГНОСТИКА:
 - Не кажи що ти AI або яку модель використовуєш'''
 }
 
-HISTORY_DIR = Path("/home/diag/autodiag/history")
+BASE_DIR = Path(__file__).resolve().parent
+
+HISTORY_DIR = BASE_DIR / "history"
 HISTORY_DIR.mkdir(exist_ok=True)
 
-CARS_FILE = Path("/home/diag/autodiag/data/cars.json")
+CARS_FILE = BASE_DIR / "data" / "cars.json"
 CARS_FILE.parent.mkdir(exist_ok=True)
 if not CARS_FILE.exists():
     CARS_FILE.write_text("[]", encoding="utf-8")
@@ -231,7 +252,7 @@ def save_cars(cars):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", api_token=API_TOKEN)
 
 
 @app.route("/status")
@@ -374,12 +395,12 @@ def voice_speak():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", api_token=API_TOKEN)
 
 
 @app.route("/adapters-page")
 def adapters_page():
-    return render_template("adapters.html")
+    return render_template("adapters.html", api_token=API_TOKEN)
 
 
 @app.route("/api/adapters")
@@ -502,7 +523,7 @@ def obd_clear():
 
 @app.route("/cars")
 def cars_page():
-    return render_template("cars.html")
+    return render_template("cars.html", api_token=API_TOKEN)
 
 
 @app.route("/api/cars")
