@@ -424,8 +424,11 @@ def api_adapters():
 def api_add_adapter():
     from adapters import add_adapter
     from adapter_researcher import get_pending_car, research_and_update
-    data = request.json
-    adapter = add_adapter(data.get("name", ""), data.get("description", ""))
+    data = request.json or {}
+    name = str(data.get("name", "")).strip()
+    if not name:
+        return jsonify({"error": "name є обов'язковим"}), 400
+    adapter = add_adapter(name, str(data.get("description", "")).strip())
     car = get_pending_car()
     if car:
         threading.Thread(target=research_and_update, args=(adapter, car), daemon=True).start()
@@ -544,11 +547,22 @@ def api_cars():
 
 @app.route("/api/cars", methods=["POST"])
 def api_add_car():
+    data = request.json or {}
+    brand = str(data.get("brand", "")).strip()
+    model = str(data.get("model", "")).strip()
+    if not brand or not model:
+        return jsonify({"error": "brand і model є обов'язковими"}), 400
+
+    car = {
+        "id": str(uuid.uuid4())[:8],
+        "brand": brand,
+        "model": model,
+        "year": str(data.get("year", "")).strip(),
+        "vin": str(data.get("vin", "")).strip(),
+        "created": datetime.datetime.now().strftime("%d.%m.%Y"),
+        "diagnostics": [],
+    }
     cars = load_cars()
-    car = request.json
-    car["id"] = str(uuid.uuid4())[:8]
-    car["created"] = datetime.datetime.now().strftime("%d.%m.%Y")
-    car["diagnostics"] = []
     cars.append(car)
     save_cars(cars)
     return jsonify(car)
@@ -563,13 +577,23 @@ def api_delete_car(car_id):
 
 @app.route("/api/cars/<car_id>/diagnostic", methods=["POST"])
 def api_add_diagnostic(car_id):
+    data = request.json or {}
+    text = str(data.get("text", "")).strip()
+    if not text:
+        return jsonify({"error": "text є обов'язковим"}), 400
+
     cars = load_cars()
+    found = False
     for car in cars:
         if car["id"] == car_id:
-            diag = request.json
-            diag["date"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-            diag["id"] = str(uuid.uuid4())[:8]
-            car["diagnostics"].append(diag)
+            car["diagnostics"].append({
+                "id": str(uuid.uuid4())[:8],
+                "text": text,
+                "date": datetime.datetime.now().strftime("%d.%m.%Y %H:%M"),
+            })
+            found = True
+    if not found:
+        return jsonify({"error": "car not found"}), 404
     save_cars(cars)
     return jsonify({"ok": True})
 
